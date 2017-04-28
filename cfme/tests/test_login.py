@@ -68,6 +68,10 @@ def test_bad_password(request, appliance):
     user = User(credential=cred)
     user.name = 'Administrator'
 
-    with error.expected("Sorry, the username or password you entered is incorrect."):
+    if appliance.version >= '5.8':
+        expected_message = 'Incorrect username or password'
+    else:
+        expected_message = 'Sorry, the username or password you entered is incorrect.'
+    with error.expected(expected_message):
         login_page.log_in(user)
         assert login_page.is_displayed
