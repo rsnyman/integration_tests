@@ -9,6 +9,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from urlparse import urlparse
 from cfme.utils import conf, testgen
+from cfme.utils.credentials import credentials
 from cfme.utils.ssh import SSHClient
 from cfme.utils.wait import wait_for
 from cfme.utils.pretty import Pretty
@@ -62,11 +63,11 @@ class DbBackupData(Pretty):
         assert creds_key, \
             "No 'credentials' key found for machine {machine_id}".format(**self.__dict__)
 
-        assert creds_key in conf.credentials.iterkeys() and conf.credentials[creds_key],\
+        assert creds_key in credentials.iterkeys() and credentials[creds_key],\
             "No credentials for key '{}' found in credentials yaml".format(creds_key)
-        credentials = conf.credentials[creds_key]
+        creds = credentials[creds_key]
 
-        return credentials
+        return creds
 
     def _get_data(self, protocol_data, protocol_type):
         """ Loads data from machine_data dict

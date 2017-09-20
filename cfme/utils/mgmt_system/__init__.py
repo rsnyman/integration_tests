@@ -5,7 +5,7 @@ from wrapanapi.base import VMInfo, WrapanapiAPIBase, ContainerWrapanapiAPIBase, 
 from wrapanapi import exceptions  # NOQA
 from wrapanapi.rhevm import RHEVMSystem as RHEVMSystemBase  # NOQA
 
-from cfme.utils import conf
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.ssh import SSHClient
 
@@ -134,8 +134,8 @@ class RHEVMSystem(RHEVMSystemBase):
 
             # Init SSH client, run pvscan on the appliance
             ssh_kwargs = {
-                'username': conf.credentials['ssh']['username'],
-                'password': conf.credentials['ssh']['password'],
+                'username': credentials['ssh']['username'],
+                'password': credentials['ssh']['password'],
                 'hostname': ip_addr
             }
             with SSHClient(**ssh_kwargs) as ssh_client:

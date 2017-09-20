@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import Pool
 
 from fixtures.pytest_store import store
-from cfme.utils import conf
+from cfme.utils.credentials import credentials as creds
 from cfme.utils.log import logger
 
 
@@ -36,7 +36,7 @@ class Db(Mapping):
 
     Args:
         hostname: base url to be used (default is from current_appliance)
-        credentials: name of credentials to use from :py:attr:`utils.conf.credentials`
+        credentials: name of credentials to use from :py:attr:`cfme.utils.credentials.credentials`
             (default ``database``)
 
     Provides convient attributes to common sqlalchemy objects related to this DB,
@@ -74,7 +74,7 @@ class Db(Mapping):
         self.hostname = hostname or store.current_appliance.db.address
         self.port = port or store.current_appliance.db_port
 
-        self.credentials = credentials or conf.credentials['database']
+        self.credentials = credentials or creds['database']
 
     def __getitem__(self, table_name):
         """Access tables as items contained in this db

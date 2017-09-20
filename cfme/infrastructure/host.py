@@ -20,10 +20,10 @@ from cfme.common.host_views import (
 )
 from cfme.exceptions import ItemNotFound
 from cfme.infrastructure.datastore import HostAllDatastoresView
-from cfme.web_ui import mixins
 from cfme.utils import conf
 from cfme.utils.appliance import Navigatable
 from cfme.utils.appliance.implementations.ui import CFMENavigateStep, navigate_to, navigator
+from cfme.utils.credentials import credentials
 from cfme.utils.ipmi import IPMI
 from cfme.utils.log import logger
 from cfme.utils.pretty import Pretty
@@ -488,7 +488,7 @@ class EditTagsFromDetails(CFMENavigateStep):
 
 
 def get_credentials_from_config(credential_config_name):
-    creds = conf.credentials[credential_config_name]
+    creds = credentials[credential_config_name]
     return Host.Credential(principal=creds["username"], secret=creds["password"])
 
 

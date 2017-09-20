@@ -5,8 +5,9 @@ from cfme.base import ui
 from cfme.base.login import BaseLoggedInPage
 from cfme.base.credential import Credential
 from cfme.configure.access_control import User
-from cfme.utils import conf, error
+from cfme.utils import error
 from cfme.utils.appliance.implementations.ui import navigate_to
+from cfme.utils.credentials import credentials
 
 pytestmark = pytest.mark.usefixtures('browser')
 
@@ -64,7 +65,7 @@ def test_bad_password(request, appliance):
 
     login_page = navigate_to(appliance.server, 'LoginScreen')
 
-    username = conf.credentials['default']['username']
+    username = credentials['default']['username']
     password = "badpassword@#$"
     cred = Credential(principal=username, secret=password)
     user = User(credential=cred)

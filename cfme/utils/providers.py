@@ -17,6 +17,7 @@ from cfme.common.provider import all_types
 
 from cfme.exceptions import UnknownProviderType
 from cfme.utils import conf, version
+from cfme.utils.credentials import credentials as creds
 from cfme.utils.log import logger
 
 providers_data = conf.cfme_data.get("management_systems", {})
@@ -365,7 +366,7 @@ def get_mgmt(provider_key, providers=None, credentials=None):
             credentials = provider_data['credentials']
         # If it is not a mapping, it most likely points to a credentials yaml (as by default)
         if not isinstance(credentials, Mapping):
-            credentials = conf.credentials[credentials]
+            credentials = creds[credentials]
         # Otherwise it is a mapping and therefore we consider it credentials
 
     # Munge together provider dict and creds,

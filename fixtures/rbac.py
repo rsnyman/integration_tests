@@ -99,7 +99,8 @@ import pytest
 import traceback
 from cfme.utils.appliance import current_appliance
 from cfme.utils.browser import browser, ensure_browser_open
-from cfme.utils import conf, testgen
+from cfme.utils.credentials import credentials
+from cfme.utils import testgen
 
 
 enable_rbac = False
@@ -170,8 +171,8 @@ def pytest_pyfunc_call(pyfuncitem):
         user = pyfuncitem._request.getfuncargvalue('rbac_role')
         really_logout()
         logger.info("setting user to {}".format(user))
-        user_obj = User(username=conf.credentials[user]['username'],
-            password=conf.credentials[user]['password'])
+        user_obj = User(username=credentials[user]['username'],
+            password=credentials[user]['password'])
 
         # Actually perform the test. outcome is set to be a result object from the test
         with user_obj:

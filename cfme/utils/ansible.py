@@ -5,6 +5,7 @@ from subprocess import check_output, CalledProcessError, STDOUT
 import sys
 from fauxfactory import gen_alphanumeric
 from cfme.utils import conf
+from cfme.utils.credentials import credentials
 from cfme.utils.providers import providers_data
 
 
@@ -55,8 +56,8 @@ def get_values_for_providers_test(provider):
         'name': provider.name,
         'state': 'present',
         'miq_url': config_formatter(),
-        'miq_username': conf.credentials['default'].username,
-        'miq_password': conf.credentials['default'].password,
+        'miq_username': credentials['default'].username,
+        'miq_password': credentials['default'].password,
         'provider_api_hostname': providers_data[provider.name]['endpoints']['default'].hostname,
         'provider_api_port': providers_data[provider.name]['endpoints']['default'].api_port,
         'provider_api_auth_token': providers_data[provider.name]['endpoints']['default'].token,
@@ -72,8 +73,8 @@ def get_values_for_users_test():
         'password': 'smartvm',
         'state': 'present',
         'miq_url': config_formatter(),
-        'miq_username': conf.credentials['default'].username,
-        'miq_password': conf.credentials['default'].password,
+        'miq_username': credentials['default'].username,
+        'miq_password': credentials['default'].password,
     }
 
 
@@ -83,8 +84,8 @@ def get_values_for_custom_attributes_test(provider):
         'entity_name': conf.cfme_data.get('management_systems', {})
         [provider.key].get('name', []),
         'miq_url': config_formatter(),
-        'miq_username': conf.credentials['default'].username,
-        'miq_password': conf.credentials['default'].password,
+        'miq_username': credentials['default'].username,
+        'miq_password': credentials['default'].password,
     }
 
 
@@ -93,8 +94,8 @@ def get_values_for_tags_test(provider):
         'resource': 'provider',
         'resource_name': provider.name,
         'miq_url': config_formatter(),
-        'miq_username': conf.credentials['default'].username,
-        'miq_password': conf.credentials['default'].password,
+        'miq_username': credentials['default'].username,
+        'miq_password': credentials['default'].password,
     }
 
 

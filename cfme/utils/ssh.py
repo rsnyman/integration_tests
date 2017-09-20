@@ -13,7 +13,8 @@ import paramiko
 from scp import SCPClient
 import diaper
 
-from cfme.utils import conf, ports, version
+from cfme.utils import ports, version
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.net import net_check
 from fixtures.pytest_store import store
@@ -127,8 +128,8 @@ class SSHClient(paramiko.SSHClient):
         if not connect_kwargs.get('hostname'):
             parsed_url = urlparse(store.base_url)
             default_connect_kwargs["port"] = ports.SSH
-            default_connect_kwargs['username'] = conf.credentials['ssh']['username']
-            default_connect_kwargs['password'] = conf.credentials['ssh']['password']
+            default_connect_kwargs['username'] = credentials['ssh']['username']
+            default_connect_kwargs['password'] = credentials['ssh']['password']
             default_connect_kwargs['hostname'] = parsed_url.hostname
         default_connect_kwargs["port"] = connect_kwargs.pop('port', ports.SSH)
 

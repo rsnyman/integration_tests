@@ -23,6 +23,7 @@ from cfme.web_ui import Quadicon, match_location
 from cfme.utils import conf, version
 from cfme.utils.appliance import Navigatable
 from cfme.utils.appliance.implementations.ui import navigator, CFMENavigateStep, navigate_to
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.pretty import Pretty
 from cfme.utils.varmeth import variable
@@ -178,7 +179,7 @@ class InfraProvider(Pretty, CloudInfraProvider, Fillable):
         """
         result = []
         for host in self.get_yaml_data().get("hosts", []):
-            creds = conf.credentials.get(host["credentials"], {})
+            creds = credentials.get(host["credentials"], {})
             cred = Host.Credential(
                 principal=creds["username"],
                 secret=creds["password"],

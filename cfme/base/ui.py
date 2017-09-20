@@ -27,6 +27,7 @@ from cfme.utils.appliance.implementations.ui import navigator, CFMENavigateStep,
 from . import Server, Region, Zone, ZoneCollection
 
 from cfme.utils import conf
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 
 
@@ -61,8 +62,8 @@ class LoginPage(View):
             self.back.click()
 
     def login_admin(self, **kwargs):
-        username = conf.credentials['default']['username']
-        password = conf.credentials['default']['password']
+        username = credentials['default']['username']
+        password = credentials['default']['password']
         cred = Credential(principal=username, secret=password)
         from cfme.configure.access_control import User
         user = User(credential=cred, name='Administrator')
@@ -157,8 +158,8 @@ def login(self, user=None, submit_method=LOGIN_METHODS[-1]):
     """
     # Circular import
     if not user:
-        username = conf.credentials['default']['username']
-        password = conf.credentials['default']['password']
+        username = credentials['default']['username']
+        password = credentials['default']['password']
         cred = Credential(principal=username, secret=password)
         from cfme.configure.access_control import User
         user = User(credential=cred, name='Administrator')
@@ -194,8 +195,8 @@ def login_admin(self, **kwargs):
     Args:
         kwargs: A dict of keyword arguments to supply to the :py:meth:`login` method.
     """
-    username = conf.credentials['default']['username']
-    password = conf.credentials['default']['password']
+    username = credentials['default']['username']
+    password = credentials['default']['password']
     cred = Credential(principal=username, secret=password)
     from cfme.configure.access_control import User
     user = User(credential=cred)

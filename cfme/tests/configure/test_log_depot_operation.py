@@ -15,6 +15,7 @@ from cfme.configure import configuration as configure
 from cfme.utils import conf, testgen
 from cfme.utils.appliance.implementations.ui import navigate_to
 from cfme.utils.blockers import BZ
+from cfme.utils.credentials import credentials
 from cfme.utils.ftp import FTPClient
 from cfme.utils.providers import get_mgmt
 from cfme.utils.version import current_version
@@ -79,7 +80,7 @@ def pytest_generate_tests(metafunc):
     data = conf.cfme_data.get("log_db_operations", {})
     depots = []
     ids = []
-    creds = conf.credentials[data['credentials']]
+    creds = credentials[data['credentials']]
     for protocol, proto_data in data['protocols'].iteritems():
         if proto_data['use_for_log_collection']:
             depots.append([LogDepotType(

@@ -81,6 +81,7 @@ conf/*.eyaml
 conf/README
 # yaml key
 .yaml_key
+.keyfile
 
 # virtual env
 .cfme/

@@ -28,6 +28,7 @@ from cfme.utils.appliance import Navigatable
 from cfme.utils.appliance.implementations.ui import navigate_to
 from cfme.utils.blockers import BZ
 from cfme.utils.browser import ensure_browser_open
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.net import resolve_hostname
 from cfme.utils.stats import tol_check
@@ -692,7 +693,7 @@ class BaseProvider(Taggable, Updateable, SummaryMixin, Navigatable):
         Returns:
             A :py:class:`cfme.base.credential.Credential` instance.
         """
-        creds = conf.credentials[credential_config_name]
+        creds = credentials[credential_config_name]
         return cls.get_credentials(creds, cred_type=cred_type)
 
     @classmethod

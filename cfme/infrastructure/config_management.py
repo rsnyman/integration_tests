@@ -15,6 +15,7 @@ from cfme.web_ui import (
 from cfme.utils import version, conf
 from cfme.utils.appliance import Navigatable
 from cfme.utils.appliance.implementations.ui import navigator, CFMENavigateStep, navigate_to
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.pretty import Pretty
 from cfme.utils.update import Updateable
@@ -255,7 +256,7 @@ class ConfigManager(Updateable, Pretty, Navigatable):
     def load_from_yaml(cls, key):
         """Returns 'ConfigManager' object loaded from yamls, based on its key"""
         data = conf.cfme_data.configuration_managers[key]
-        creds = conf.credentials[data['credentials']]
+        creds = credentials[data['credentials']]
         return cls(
             name=data['name'],
             url=data['url'],

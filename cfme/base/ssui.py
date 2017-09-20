@@ -8,10 +8,10 @@ from widgetastic.utils import ParametrizedLocator
 
 from cfme.base.credential import Credential
 from cfme.configure.access_control import User
-from cfme.utils import conf
 from cfme.utils.appliance import ViaSSUI
 from cfme.utils.appliance.implementations.ssui import navigator, SSUINavigateStep, navigate_to
 from cfme.utils.browser import ensure_browser_open, quit
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 
 import time
@@ -96,8 +96,8 @@ def address(self):
 @Server.login.external_implementation_for(ViaSSUI)
 def login(self, user=None, **kwargs):
     if not user:
-        username = conf.credentials['default']['username']
-        password = conf.credentials['default']['password']
+        username = credentials['default']['username']
+        password = credentials['default']['password']
         cred = Credential(principal=username, secret=password)
         user = User(credential=cred)
     login_view = navigate_to(self.appliance.server, 'LoginScreen')

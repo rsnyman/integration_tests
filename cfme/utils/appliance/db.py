@@ -3,7 +3,8 @@ from cached_property import cached_property
 import fauxfactory
 from textwrap import dedent
 
-from cfme.utils import db, conf, clear_property_cache, datafile
+from cfme.utils import db, clear_property_cache, datafile
+from cfme.utils.credentials import credentials
 from cfme.utils.path import scripts_path
 from cfme.utils.version import LATEST
 from cfme.utils.wait import wait_for
@@ -128,7 +129,7 @@ class ApplianceDB(AppliancePlugin):
             raise ApplianceException(msg)
         if self.appliance.version > '5.8':
             status, output = self.ssh_client.run_command("fix_auth --databaseyml -i {}".format(
-                conf.credentials['database'].password), timeout=45)
+                credentials['database'].password), timeout=45)
             if status != 0:
                 self.logger.error("Failed to change invalid db password: {}".format(output))
 
@@ -167,7 +168,7 @@ class ApplianceDB(AppliancePlugin):
 
         # set root password
         cmd = "psql -d vmdb_production -c \"alter user {} with password '{}'\"".format(
-            conf.credentials['database']['username'], conf.credentials['database']['password']
+            credentials['database']['username'], credentials['database']['password']
         )
         client.run_command(cmd)
 
@@ -214,8 +215,8 @@ class ApplianceDB(AppliancePlugin):
         client = self.ssh_client
 
         # Defaults
-        db_password = db_password or conf.credentials['database']['password']
-        ssh_password = ssh_password or conf.credentials['ssh']['password']
+        db_password = db_password or credentials['database']['password']
+        ssh_password = ssh_password or credentials['ssh']['password']
 
         if self.appliance.has_cli:
             # use the cli
@@ -272,8 +273,8 @@ class ApplianceDB(AppliancePlugin):
 
         # default
         db_name = db_name or 'vmdb_production'
-        db_username = db_username or conf.credentials['database']['username']
-        db_password = db_password or conf.credentials['database']['password']
+        db_username = db_username or credentials['database']['username']
+        db_password = db_password or credentials['database']['password']
 
         client = self.ssh_client
 

@@ -2,6 +2,7 @@ import pytest
 
 from cfme.configure.configuration.region_settings import RedHatUpdates
 from cfme.utils import conf, version
+from cfme.utils.credentials import credentials
 from cfme.utils.testgen import parametrize
 from cfme.utils.wait import wait_for
 from cfme.utils.log import logger
@@ -47,7 +48,7 @@ def pytest_generate_tests(metafunc):
             if proxy_data and reg_data.get('use_http_proxy', False):
                 proxy_url = proxy_data['url']
                 proxy_creds_key = proxy_data['credentials']
-                proxy_creds = conf.credentials[proxy_creds_key]
+                proxy_creds = credentials[proxy_creds_key]
                 argval = [reg_method, reg_data, proxy_url, proxy_creds]
                 argid = '{}-{}'.format(reg_method, 'proxy_on')
                 idlist.append(argid)
@@ -99,8 +100,8 @@ def test_rh_creds_validation(request, reg_method, reg_data, proxy_url, proxy_cre
     red_hat_updates = RedHatUpdates(
         service=reg_method,
         url=reg_data['url'],
-        username=conf.credentials[reg_method]['username'],
-        password=conf.credentials[reg_method]['password'],
+        username=credentials[reg_method]['username'],
+        password=credentials[reg_method]['password'],
         repo_name=repo,
         organization=reg_data.get('organization'),
         use_proxy=use_proxy,
@@ -133,8 +134,8 @@ def test_rh_registration(appliance, request, reg_method, reg_data, proxy_url, pr
     red_hat_updates = RedHatUpdates(
         service=reg_method,
         url=reg_data['url'],
-        username=conf.credentials[reg_method]['username'],
-        password=conf.credentials[reg_method]['password'],
+        username=credentials[reg_method]['username'],
+        password=credentials[reg_method]['password'],
         repo_name=repo,
         organization=reg_data.get('organization'),
         use_proxy=use_proxy,
@@ -197,8 +198,8 @@ def test_rh_updates(appliance_preupdate, appliance):
         red_hat_updates = RedHatUpdates(
             service='rhsm',
             url=conf.cfme_data['redhat_updates']['registration']['rhsm']['url'],
-            username=conf.credentials['rhsm']['username'],
-            password=conf.credentials['rhsm']['password'],
+            username=credentials['rhsm']['username'],
+            password=credentials['rhsm']['password'],
             set_default_repository=set_default_repo
         )
         red_hat_updates.update_registration(validate=False)

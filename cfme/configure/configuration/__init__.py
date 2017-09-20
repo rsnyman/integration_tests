@@ -18,10 +18,11 @@ from cfme.web_ui import (
     AngularSelect, Calendar, CFMECheckbox, Form, InfoBlock, Input,
     Region as UIRegion, Select, Table, accordion, fill, flash, form_buttons)
 from cfme.web_ui.form_buttons import change_stored_password
-from cfme.utils import version, conf
+from cfme.utils import version
 from cfme.utils.appliance import Navigatable, current_appliance
 from cfme.utils.appliance.implementations.ui import navigator, CFMENavigateStep, navigate_to
 from cfme.utils.blockers import BZ
+from cfme.utils.credentials import credentials
 from cfme.utils.log import logger
 from cfme.utils.pretty import Pretty
 from cfme.utils.timeutil import parsetime
@@ -1548,9 +1549,9 @@ def set_replication_worker_host(host, port='5432'):
         replication_worker,
         dict(host=host,
              port=port,
-             username=conf.credentials['database']['username'],
-             password=conf.credentials['database']['password'],
-             password_verify=conf.credentials['database']['password']),
+             username=credentials['database']['username'],
+             password=credentials['database']['password'],
+             password_verify=credentials['database']['password']),
         action=form_buttons.save
     )
 

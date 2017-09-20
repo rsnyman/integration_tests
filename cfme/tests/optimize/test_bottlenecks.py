@@ -6,6 +6,7 @@ from datetime import timedelta
 from cfme.optimize.bottlenecks import Bottlenecks
 from cfme.utils import conf
 from cfme.utils.appliance.implementations.ui import navigate_to
+from cfme.utils.credentials import credentials
 from cfme.utils.timeutil import parsetime
 from cfme.utils.ssh import SSHClient
 
@@ -38,7 +39,7 @@ def db_restore(temp_appliance_extended_db):
     app.evmserverd.stop()
     app.db.drop()
     db_storage_hostname = conf.cfme_data['bottlenecks']['hostname']
-    db_storage_ssh = SSHClient(hostname=db_storage_hostname, **conf.credentials['bottlenecks'])
+    db_storage_ssh = SSHClient(hostname=db_storage_hostname, **credentials['bottlenecks'])
     with db_storage_ssh as ssh_client:
         # Different files for different versions
         ver = "_58" if temp_appliance_extended_db.version > '5.7' else "_57"

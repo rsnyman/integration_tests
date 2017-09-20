@@ -25,6 +25,7 @@ from fixtures import ui_coverage
 from fixtures.pytest_store import store
 from cfme.utils import clear_property_cache
 from cfme.utils import conf, ssh, ports
+from cfme.utils.credentials import credentials
 from cfme.utils.datafile import load_data_file
 from cfme.utils.events import EventListener
 from cfme.utils.log import logger, create_sublogger, logger_wrap
@@ -309,8 +310,8 @@ class IPAppliance(object):
         from cfme.base.credential import Credential
         if self._user is None:
             # Admin by default
-            username = conf.credentials['default']['username']
-            password = conf.credentials['default']['password']
+            username = credentials['default']['username']
+            password = credentials['default']['password']
             logger.info(
                 '%r.user was set to None before, therefore generating an admin user: %s/%s',
                 self, username, password)
@@ -588,8 +589,8 @@ class IPAppliance(object):
         return MiqApi(
             entry_point=entry_point or "{}://{}:{}/api".format(
                 self.scheme, self.address, self.ui_port),
-            auth=auth or (conf.credentials["default"]["username"],
-                          conf.credentials["default"]["password"]),
+            auth=auth or (credentials["default"]["username"],
+                          credentials["default"]["password"]),
             logger=self.rest_logger if logger == "default" else logger,
             verify_ssl=verify_ssl)
 
@@ -709,10 +710,10 @@ class IPAppliance(object):
 
     def ssh_client_with_privatekey(self):
         with open(conf_path.join('appliance_private_key').strpath, 'w') as key:
-            key.write(conf.credentials['ssh']['private_key'])
+            key.write(credentials['ssh']['private_key'])
         connect_kwargs = {
             'hostname': self.hostname,
-            'username': conf.credentials['ssh']['ssh-user'],
+            'username': credentials['ssh']['ssh-user'],
             'key_filename': conf_path.join('appliance_private_key').strpath,
         }
         ssh_client = ssh.SSHClient(**connect_kwargs)
@@ -753,8 +754,8 @@ class IPAppliance(object):
         else:
             connect_kwargs = {
                 'hostname': self.hostname,
-                'username': conf.credentials['ssh']['username'],
-                'password': conf.credentials['ssh']['password'],
+                'username': credentials['ssh']['username'],
+                'password': credentials['ssh']['password'],
                 'container': self.container,
                 'is_pod': False,
                 'port': self.ssh_port,
@@ -1939,8 +1940,8 @@ class IPAppliance(object):
 
     def add_pglogical_replication_subscription(self, host):
         """Add a pglogical replication subscription without using the Web UI."""
-        user = conf.credentials['ssh']['username']
-        password = conf.credentials['ssh']['password']
+        user = credentials['ssh']['username']
+        password = credentials['ssh']['password']
         dbname = 'vmdb_production'
         port = 5432
         command = ('sub = PglogicalSubscription.new;'
@@ -1955,7 +1956,7 @@ class IPAppliance(object):
     def set_rubyrep_replication(self, host, port=5432, database='vmdb_production',
                                 username='root', password=None):
         """Sets up rubyrep replication via advanced configuration settings yaml."""
-        password = password or self._encrypt_string(conf.credentials['ssh']['password'])
+        password = password or self._encrypt_string(credentials['ssh']['password'])
         yaml = self.get_yaml_config()
         if 'replication_worker' in yaml['workers']['worker_base']:
             dest = yaml['workers']['worker_base']['replication_worker']['replication'][
