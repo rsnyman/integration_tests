@@ -112,7 +112,7 @@ def futurecheck(check_date):
 def active_streams(api, force=False):
     global _active_streams
     if _active_streams is None or force:
-        _active_streams = [stream['name'] for stream in api.group.get(stream=True)['objects']]
+        _active_streams = [stream['name'] for stream in api.group.get(stream=True)['results']]
     return _active_streams
 
 
@@ -153,7 +153,7 @@ def parse_template(template_name):
 
 def provider_templates(api):
     provider_templates = defaultdict(list)
-    for template in depaginate(api, api.template.get())['objects']:
+    for template in depaginate(api, api.template.get())['results']:
         for provider in template['providers']:
             provider_templates[provider].append(template['name'])
     return provider_templates
@@ -240,7 +240,7 @@ def templates_to_test(api, limit=1, request_type=None):
     templates = []
     for pt in api.untestedtemplate.get(
             limit=limit, tested=False, provider__type=request_type).get(
-            'objects', []):
+            'results', []):
         name = pt['template']['name']
         group = pt['template']['group']['name']
         provider = pt['provider']['key']
@@ -254,7 +254,7 @@ def get_tested_providers(api, template_name):
     Return all tested provider templates for given template_name
     """
     response = api.providertemplate.get(tested=True, template=template_name, limit=200)
-    providers = [pt['provider'] for pt in response.get('objects', []) if pt['provider']['active']]
+    providers = [pt['provider'] for pt in response.get('results', []) if pt['provider']['active']]
     return providers
 
 
@@ -324,7 +324,7 @@ def post_jenkins_result(job_name, number, stream, date, template,
         api().build.post({
             'job_name': job_name,
             'number': number,
-            'stream': '/api/group/{}/'.format(stream),
+            'stream': {'name': stream},
             'datestamp': date,
             'template': template,
             'results': artifact_report,
@@ -339,7 +339,7 @@ def trackerbot_add_provider_template(stream, provider, template_name, custom_dat
         existing_provider_templates = [
             pt['id']
             for pt in depaginate(
-                api(), api().providertemplate.get(provider=provider))['objects']]
+                api(), api().providertemplate.get(provider=provider))['results']]
         if '{}_{}'.format(template_name, provider) in existing_provider_templates:
             print('Template {} already tracked for provider {}'.format(
                 template_name, provider))
@@ -355,8 +355,7 @@ def trackerbot_add_provider_template(stream, provider, template_name, custom_dat
 
 def depaginate(api, result):
     """Depaginate the first (or only) page of a paginated result"""
-    meta = result['meta']
-    if meta['next'] is None:
+    if result['next'] is None:
         # No pages means we're done
         return result
 
@@ -364,27 +363,21 @@ def depaginate(api, result):
     # since we'll be chewing on the 'meta' object with every new GET
     # same thing for objects, since we'll just be appending to it
     # while we pull more records
-    ret_meta = meta.copy()
-    ret_objects = result['objects']
-    while meta['next']:
+    result_copy = result.copy()
+    while result['next']:
         # parse out url bits for constructing the new api req
-        next_url = six.moves.urllib.parse.urlparse(meta['next'])
+        next_url = six.moves.urllib.parse.urlparse(result['next'])
         # ugh...need to find the word after 'api/' in the next URL to
         # get the resource endpoint name; not sure how to make this better
         next_endpoint = next_url.path.strip('/').split('/')[-1]
         next_params = {k: v[0] for k, v in six.moves.urllib.parse.parse_qs(next_url.query).items()}
         result = getattr(api, next_endpoint).get(**next_params)
-        ret_objects.extend(result['objects'])
-        meta = result['meta']
+        result_copy['results'].extend(result['results'])
 
-    # fix meta up to not tell lies
-    ret_meta['total_count'] = len(ret_objects)
-    ret_meta['next'] = None
-    ret_meta['limit'] = ret_meta['total_count']
-    return {
-        'meta': ret_meta,
-        'objects': ret_objects
-    }
+    # fix copy up to not tell lies
+    result_copy['count'] = len(result_copy['results'])
+    result_copy['next'] = None
+    return result_copy
 
 
 def composite_uncollect(build, source='jenkins'):

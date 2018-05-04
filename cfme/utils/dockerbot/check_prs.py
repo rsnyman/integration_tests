@@ -27,33 +27,32 @@ DEBUG = docker_conf.get('debug', False)
 logger = setup_logger(logging.getLogger('prt'))
 
 # Disable pika logs
-logging.getLogger("pika").propagate = False
+logging.getLogger('pika').propagate = False
 
 
 def send_message_to_bot(msg):
-
     required_fields = set(['rabbitmq_url', 'gh_queue', 'gh_channel', 'gh_message_type'])
     if not required_fields.issubset(docker_conf.viewkeys()):
-        logger.warn("Skipping - docker.yaml doesn't have {}".format(required_fields))
+        logger.warn('Skipping - docker.yaml does not have {}'.format(required_fields))
         return
 
-    logger.info("Github PR bot: about to send '{}'".format(msg))
+    logger.info('Github PR bot: about to send "{}"'.format(msg))
     url = docker_conf['rabbitmq_url']
     queue = docker_conf['gh_queue']
     irc_channel = docker_conf['gh_channel']
-#    message_type = docker_conf['gh_message_type']
+    # message_type = docker_conf['gh_message_type']
     params = pika.URLParameters(url)
     params.socket_timeout = 5
     connection = None
     try:
         connection = pika.BlockingConnection(params)  # Connect to CloudAMQP
         channel = connection.channel()
-        message = {"channel": irc_channel, "body": msg}
+        message = {'channel': irc_channel, 'body': msg}
         channel.basic_publish(exchange='', routing_key=queue,
                               body=json.dumps(message, ensure_ascii=True))
     except Exception:
         output = traceback.format_exc()
-        logger.warn("Exception while sending a message to the bot: {}".format(output))
+        logger.warn('Exception while sending a message to the bot: {}'.format(output))
     finally:
         if connection:
             connection.close()
@@ -71,7 +70,7 @@ def perform_request(url):
     out = {}
     if token:
         headers = {'Authorization': 'token {}'.format(token)}
-        full_url = "https://api.github.com/repos/{}/{}/{}".format(owner, repo, url)
+        full_url = 'https://api.github.com/repos/{}/{}/{}'.format(owner, repo, url)
         r = requests.get(full_url, headers=headers)
         out = r.json()
     return out
@@ -84,8 +83,8 @@ def set_invalid_runs(db_pr):
         db_pr: The database pr_object, which will be a JSON
         pr: The GitHub PR object
     """
-    for run in db_pr['runs']:
-        if run['result'] == "pending":
+    for run in db_pr['run_set']:
+        if run['status'] == 'pending':
             run_db = tapi.run(run['id']).get()
             for task in run_db['tasks']:
                 tapi.task(task['tid']).patch({'result': 'invalid', 'cleanup': False})
@@ -104,20 +103,32 @@ def create_run(db_pr, pr):
     """
     logger.info(' Creating new run for {}'.format(db_pr['number']))
 
-    new_run = dict(pr="/api/pr/{}/".format(db_pr['number']),
-                   datestamp=str(datetime.now()),
-                   commit=pr['head']['sha'])
-    run_record = tapi.run.post(new_run)
-    for group in tapi.group.get(stream=True, use_for_prt=True)['objects']:
+    new_run = {
+        'pr': db_pr,
+        'datestamp': str(datetime.now()),
+        'commit': pr['head']['sha']
+    }
+    try:
+        run_record = tapi.run.post(new_run)
+        print(run_record)
+    except HttpClientError as http_error:
+        logging.exception(http_error.response.text)
+        raise http_error
+    for group in tapi.group.get(stream=True, use_for_prt=True)['results']:
         stream = group['name']
         logger.info('  Adding task stream {}...'.format(stream))
-        task_data = dict(output="",
+        task_data = dict(output='',
             tid=fauxfactory.gen_alphanumeric(8),
-            result="pending",
+            result='pending',
             stream=stream,
             datestamp=str(datetime.now()),
-            run="/api/run/{}/".format(run_record['id']))
-        tapi.task.post(task_data)
+            run=run_record)
+        print(task_data)
+        try:
+            tapi.task.post(task_data)
+        except HttpClientError as http_error:
+            logger.exception(http_error.response.text)
+            raise http_error
 
 
 def check_prs():
@@ -138,10 +149,10 @@ def check_prs():
                 check_pr(pr)
         page += 1
 
-    prs = tapi.pr.get(closed=False, limit=0)['objects']
+    prs = tapi.pr.get(closed=False, limit=0)['results']
     for pr in prs:
         if pr['number'] not in numbers:
-            logger.info("PR {} closed".format(pr['number']))
+            logger.info('PR {} closed'.format(pr['number']))
             tapi.pr(pr['number']).patch({'closed': True})
 
 
@@ -155,10 +166,10 @@ def run_tasks():
     """
     cont_count = 0
     for container in dockerbot.dc.containers():
-        if "py_test_base" in container['Image']:
+        if 'py_test_base' in container['Image']:
             cont_count += 1
     while cont_count < CONT_LIMIT:
-        tasks = tapi.task().get(limit=1, result='pending')['objects']
+        tasks = tapi.task().get(limit=1, result='pending')['results']
         if tasks:
             task = tasks[0]
             stream = task['stream']
@@ -176,10 +187,11 @@ def run_tasks():
                 #     raise Exception('No template for stream')
                 # template = template_obj['latest_template']
                 # vm_name = 'dkb-{}'.format(task['tid'])
-                task_update = {}
-                task_update['provider'] = "Sprout"
-                task_update['vm_name'] = "Sprout"
-                task_update['template'] = "Sprout"
+                task_update = {
+                    'provider': 'Sprout',
+                    'vm_name': 'Sprout',
+                    'template': 'Sprout'
+                }
                 tapi.task(task['tid']).patch(task_update)
 
                 # Create a dockerbot instance and run the PR test
@@ -210,24 +222,24 @@ def vm_reaper():
     task has completed, then the VM is cleaned up and then the docker container. If both of
     these operations occur, then the cleanup is set to True.
     """
-    tasks = tapi.task().get(cleanup=False, limit=0)['objects']
+    tasks = tapi.task().get(cleanup=False, limit=0)['results']
     for task in tasks:
-        if task['result'] in ["failed", "passed", "invalid"]:
+        if task['result'] in ['failed', 'passed', 'invalid']:
             vm_cleanup = False
             docker_cleanup = False
 
-            if task['provider'] == "Sprout" and task['vm_name'] == "Sprout":
+            if task['provider'] == 'Sprout' and task['vm_name'] == 'Sprout':
                 vm_cleanup = True
             else:
                 if task['provider'] and task['vm_name']:
                     logger.info('Cleaning up {} on {}'.format(task['vm_name'], task['provider']))
-                    if task['vm_name'] == "None":
+                    if task['vm_name'] == 'None':
                         vm_cleanup = True
                     else:
                         appliance = Appliance.from_provider(task['provider'], task['vm_name'])
                         try:
                             if appliance.does_vm_exist():
-                                logger.info("Destroying {}".format(appliance.vm_name))
+                                logger.info('Destroying {}'.format(appliance.vm_name))
                                 appliance.destroy()
                             vm_cleanup = True
                         except Exception:
@@ -259,15 +271,15 @@ def set_status(commit, status, context, runid):
 
     """
     data = {
-        "state": status,
-        "description": "{} #{}".format(status, runid),
-        "context": "ci/{}".format(context)
+        'state': status,
+        'description': '{} #{}'.format(status, runid),
+        'context': 'ci/{}'.format(context)
     }
     data_json = json.dumps(data)
 
     if not DEBUG:
         headers = {'Authorization': 'token {}'.format(token)}
-        requests.post("https://api.github.com/repos/{}/{}/commits/{}/statuses".format(
+        requests.post('https://api.github.com/repos/{}/{}/commits/{}/statuses'.format(
             owner, repo, commit), data=data_json, headers=headers)
 
 
@@ -287,28 +299,28 @@ def check_status(pr):
 
     if db_pr['wip']:
         return
-
-    if db_pr['runs']:
-        commit = db_pr['runs'][0]['commit']
-        run_id = db_pr['runs'][0]['id']
+    if db_pr['run_set']:
+        commit = db_pr['run_set'][0]['commit']
+        run_id = db_pr['run_set'][0]['id']
     else:
         return
 
-    states = {'pending': 'pending',
-              'failed': 'failure',
-              'invalid': 'error',
-              'passed': 'success',
-              'running': 'pending'}
-
+    states = {
+        'pending': 'pending',
+        'failed': 'failure',
+        'invalid': 'error',
+        'passed': 'success',
+        'running': 'pending'
+    }
     task_updated_state = None
     task_stream = None
 
     try:
-        tasks = tapi.task.get(run=run_id)['objects']
-        statuses = perform_request("commits/{}/statuses".format(commit))
+        tasks = tapi.task.get(run__id=run_id)['results']
+        statuses = perform_request('commits/{}/statuses'.format(commit))
         for task in tasks:
             for status in statuses:
-                if status['context'] == "ci/{}".format(task['stream']):
+                if status['context'] == 'ci/{}'.format(task['stream']):
                     if status['state'] == states[task['result']]:
                         break
                     else:
@@ -328,7 +340,7 @@ def check_status(pr):
     failed_states = ['pending', 'invalid', 'running']
     if task_updated_state and task_stream and task_updated_state not in failed_states:
         # There are no pending, invalid or running states in the run_id
-        send_message_to_bot("PR: #{} {} - {} - {}".format(
+        send_message_to_bot('PR: #{} {} - {} - {}'.format(
             pr['number'], pr['title'], task_stream, task_updated_state))
 
 
@@ -353,55 +365,63 @@ def check_pr(pr):
     try:
         db_pr = tapi.pr(pr['number']).get()
         last_run = tapi.run().get(pr__number=pr['number'], order_by='-datestamp',
-                                  limit=1)['objects']
+                                  limit=1)['results']
         if last_run:
-            if last_run[0]['retest'] is True and "[WIP]" not in pr['title']:
+            if last_run[0]['retest'] is True and '[WIP]' not in pr['title']:
                 logger.info('Re-testing PR {}'.format(pr['number']))
                 set_invalid_runs(db_pr)
                 create_run(db_pr, pr)
-            elif last_run[0]['commit'] != commit and "[WIP]" not in pr['title']:
+            elif last_run[0]['commit'] != commit and '[WIP]' not in pr['title']:
                 logger.info('New commit ({}) detected for PR {}'.format(commit, pr['number']))
                 set_invalid_runs(db_pr)
                 create_run(db_pr, pr)
-        elif "[WIP]" not in pr['title']:
+        elif '[WIP]' not in pr['title']:
             logger.info('First run ({}) for PR {}'.format(commit, pr['number']))
             create_run(db_pr, pr)
         else:
             wip = True
         tapi.pr(pr['number']).put({
+            'number': pr['number'],
             'current_commit_head': commit,
             'wip': wip,
             'title': pr['title'],
-            'description': pr['body']}
-        )
-    except HttpClientError:
-        logger.info('PR {} not found in database, creating...'.format(pr['number']))
+            'description': pr['body'] if pr['body'] else ''
+        })
+    except HttpClientError as http_error:
+        if http_error.response.status_code == 404:
+            logger.info('PR {} not found in database, creating...'.format(pr['number']))
+        else:
+            logger.exception(http_error.response.text)
+            raise http_error
 
-        new_pr = {'number': pr['number'],
-                  'description': pr['body'],
-                  'current_commit_head': commit,
-                  'title': pr['title']}
-        tapi.pr().post(new_pr)
-        if "[WIP]" not in pr['title']:
+        new_pr = {
+            'number': pr['number'],
+            'description': pr['body'] if pr['body'] else '',
+            'current_commit_head': commit,
+            'title': pr['title']
+        }
+        try:
+            tapi.pr().post(new_pr)
+        except HttpClientError as http_error:
+            logger.exception(http_error.response.text)
+            raise http_error
+        if '[WIP]' not in pr['title']:
             create_run(new_pr, pr)
-        elif "[WIP]" in pr['title']:
+        elif '[WIP]' in pr['title']:
             new_pr['wip'] = True
         tapi.pr(pr['number']).put(new_pr)
-        send_message_to_bot("PR: #{} {} - New".format(pr['number'], pr['title']))
+        send_message_to_bot('PR: #{} {} - New'.format(pr['number'], pr['title']))
 
     check_status(pr)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if docker_conf['pr_enabled']:
-
         # First we check through the PRs from GitHub
         check_prs()
-
         # Next we run any tasks that are pending up to the queue limit
         if not DEBUG:
             run_tasks()
-
         # Finally we clean up any leftover artifacts
         if not DEBUG:
             vm_reaper()
